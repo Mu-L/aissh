@@ -41,3 +41,4 @@ STYLE_GUIDE.md
 TECHNICAL_DOC.md
 pnpm-lock.yaml
 .vercel/project.json
+release/*

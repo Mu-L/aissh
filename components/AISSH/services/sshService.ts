@@ -9,8 +9,23 @@ class SSHConnection {
   private statusListeners: Set<(status: { serverId: string; status: string; message?: string }) => void> = new Set();
 
   private constructor() {
-    // 自动检测环境：生产环境下使用相对路径，开发环境下使用 localhost:3001
-    const socketUrl = process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:3001';
+    // 自动检测环境
+    // 1. Electron 环境: 始终连接 localhost:3001 (因为后端由 Electron 主进程启动)
+    // 2. Web 生产环境: 使用相对路径 / (通过 Nginx 转发)
+    // 3. Web 开发环境: 使用 localhost:3001
+    
+    // @ts-ignore
+    const isElectron = typeof window !== 'undefined' && window.electron?.isElectron;
+    
+    let socketUrl;
+    if (isElectron) {
+        socketUrl = 'http://localhost:3001';
+    } else {
+        socketUrl = process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:3001';
+    }
+
+    console.log(`Initializing SSH Connection. Environment: ${isElectron ? 'Electron' : 'Web'}, Socket URL: ${socketUrl}`);
+
     this.socket = io(socketUrl, {
       autoConnect: false,
     });

@@ -34,7 +34,11 @@ export const SessionTabs: React.FC = () => {
   if (openSessions.length === 0) return null;
 
   return (
-    <div ref={containerRef} className="flex bg-sci-panel/60 backdrop-blur-md p-1 gap-1 overflow-x-auto no-scrollbar border-b border-white/5 flex-shrink-0 select-none relative">
+    <div 
+      ref={containerRef} 
+      className="flex bg-sci-panel/60 backdrop-blur-md p-1 gap-1 overflow-x-auto no-scrollbar border-b border-white/5 flex-shrink-0 select-none relative"
+      style={{ WebkitAppRegion: 'drag' } as any}
+    >
       {openSessions.map(id => {
         const server = servers.find(s => s.id === id);
         const temp = tempSessions[id];
@@ -46,6 +50,7 @@ export const SessionTabs: React.FC = () => {
               e.preventDefault();
               setMenu({ id, x: e.clientX, y: e.clientY });
             }}
+            style={{ WebkitAppRegion: 'no-drag' } as any}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-none cursor-pointer min-w-[120px] max-w-[200px] text-[11px] font-bold uppercase tracking-wider transition-all ${activeSessionId === id ? 'bg-sci-cyan/10 text-sci-cyan border-t border-sci-cyan shadow-[0_0_10px_rgba(0,243,255,0.1)]' : 'hover:bg-white/5 text-sci-dim'}`}
           >
             <TerminalIcon size={12} className={activeSessionId === id ? 'text-sci-cyan' : 'text-sci-dim'}/> 

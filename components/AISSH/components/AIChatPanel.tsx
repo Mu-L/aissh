@@ -611,15 +611,18 @@ export const AIChatPanel = forwardRef<AIChatPanelRef, AIChatPanelProps>(({ logs,
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 bg-sci-base">
-        <div className="h-14 px-4 bg-sci-panel/80 backdrop-blur-md flex items-center justify-between border-b border-white/5 shrink-0 relative z-20">
+        <div 
+          className="h-14 px-4 bg-sci-panel/80 backdrop-blur-md flex items-center justify-between border-b border-white/5 shrink-0 relative z-20"
+          style={{ WebkitAppRegion: 'drag' } as any}
+        >
           <div className="flex items-center gap-3">
-            {!showHistory && <button className="p-1.5 hover:bg-white/5 text-sci-text/60 hover:text-sci-cyan transition-colors" onClick={() => setShowHistory(true)}><PanelLeft size={18}/></button>}
+            {!showHistory && <button style={{ WebkitAppRegion: 'no-drag' } as any} className="p-1.5 hover:bg-white/5 text-sci-text/60 hover:text-sci-cyan transition-colors" onClick={() => setShowHistory(true)}><PanelLeft size={18}/></button>}
             <div className="truncate">
               <h2 className="font-sci font-bold text-sm truncate text-sci-text uppercase tracking-widest">{activeSession.title}</h2>
               <div className="text-[9px] text-sci-cyan/70 uppercase tracking-[0.2em] font-black font-sci">神经链路 AI 助手</div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
             <button onClick={() => setIsPromptConfigOpen(true)} className="h-8 px-2 flex items-center justify-center text-sci-text/80 hover:text-sci-violet transition-all hover:opacity-100" title="设备类型提示语配置">
               <Sparkles size={14}/>
             </button>

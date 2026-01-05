@@ -142,7 +142,10 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
   return (
     <div className="flex flex-col h-full bg-sci-obsidian/50 border-r border-sci-cyan/10">
       {/* Header */}
-      <div className="p-4 border-b border-sci-cyan/10 flex items-center justify-between bg-sci-panel/30">
+      <div 
+        className="p-4 border-b border-sci-cyan/10 flex items-center justify-between bg-sci-panel/30"
+        style={{ WebkitAppRegion: 'drag' } as any}
+      >
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-sci-cyan/10 border border-sci-cyan/30 text-sci-cyan rounded-sm">
             <ServerIcon size={16} className="animate-pulse" />
@@ -155,7 +158,7 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button 
             onClick={() => onAddFolder(null)}
             className="p-1.5 text-sci-dim hover:text-sci-cyan hover:bg-sci-cyan/5 transition-all rounded"
