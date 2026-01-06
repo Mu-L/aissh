@@ -7,6 +7,7 @@ import { useAIStore } from '../store/useAIStore';
 const getAIClient = () => {
   const { agentConfig } = useAIStore.getState();
   
+  // 1. 优先使用“神经核心配置” (Neural Core Config) 中的自定义模型配置
   if (agentConfig.useCustomModel && agentConfig.customUrl && agentConfig.customKey) {
     return new OpenAI({
       apiKey: agentConfig.customKey,
@@ -15,18 +16,36 @@ const getAIClient = () => {
     });
   }
 
-  return new OpenAI({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-    baseURL: import.meta.env.VITE_OPENAI_BASE_URL,
-    dangerouslyAllowBrowser: true
-  });
+  // 2. 其次使用本地环境配置 (Local Config)
+  const envKey = import.meta.env.VITE_OPENAI_API_KEY;
+  const envUrl = import.meta.env.VITE_OPENAI_BASE_URL;
+
+  if (envKey && envUrl) {
+    return new OpenAI({
+      apiKey: envKey,
+      baseURL: envUrl,
+      dangerouslyAllowBrowser: true
+    });
+  }
+
+  // 3. 都没有则抛出错误
+  throw new Error('未检测到有效的 AI 核心配置。请在“神经核心配置”中设置自定义模型，或检查本地环境变量。');
 };
 
 const getModel = () => {
   const { agentConfig } = useAIStore.getState();
+  
+  // 1. 优先使用神经核心配置中的模型名
   if (agentConfig.useCustomModel && agentConfig.customModelName) {
     return agentConfig.customModelName;
   }
+  
+  // 如果选择了预设模型
+  if (!agentConfig.useCustomModel && agentConfig.model) {
+    return agentConfig.model;
+  }
+
+  // 2. 备选使用本地环境配置的模型名
   return import.meta.env.VITE_OPENAI_MODEL || 'qwen-max';
 };
 
@@ -81,7 +100,8 @@ export class GeminiAIService implements AIService {
       return JSON.parse(response.choices[0]?.message?.content || "{}");
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return null;
-      return { explanation: "无法获取详细解析", riskLevel: "medium", warning: "解析失败" };
+      const errorMsg = e instanceof Error ? e.message : "解析失败";
+      return { explanation: "无法获取详细解析", riskLevel: "medium", warning: errorMsg };
     }
   }
 
@@ -147,7 +167,8 @@ ${devicePrompt ? `\n${devicePrompt}\n` : ''}
         if (content) onChunk(content);
       }
     } catch (error) {
-      onChunk("\n\n*连接 AI 出错。*");
+      const errorMsg = error instanceof Error ? error.message : "连接 AI 出错";
+      onChunk(`\n\n**[AI 核心错误]**: ${errorMsg}`);
     }
   }
 
@@ -167,7 +188,8 @@ ${devicePrompt ? `\n${devicePrompt}\n` : ''}
       });
       return response.choices[0]?.message?.content || '';
     } catch (error) {
-      return 'Error connecting to AI service';
+      const errorMsg = error instanceof Error ? error.message : "Error connecting to AI service";
+      return `[AI Error]: ${errorMsg}`;
     }
   }
 }
@@ -323,7 +345,8 @@ ${devicePrompt ? `\n${devicePrompt}\n` : ''}
 
       attempts++;
     } catch (e) {
-      await onStep({ thought: "执行过程中遇到解析错误或网络异常。", isDone: true, summary: "Agent 异常退出。" });
+      const errorMsg = e instanceof Error ? e.message : "AI 连接中断或配置错误";
+      await onStep({ thought: `AI 连接出错: ${errorMsg}`, isDone: true, summary: "任务因 AI 连接问题终止。" });
       return;
     }
   }
@@ -346,6 +369,7 @@ export const analyzeLogs = async (log: string) => {
     });
     return response.choices[0]?.message?.content || '';
   } catch (error) {
-    return 'Error analyzing logs';
+    const errorMsg = error instanceof Error ? error.message : "Error analyzing logs";
+    return `[AI Error]: ${errorMsg}`;
   }
 };
