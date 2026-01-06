@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "tauri:dev": "node scripts/prepare-tauri-sidecar.mjs debug && tauri dev",
-    "tauri:build": "tauri build || (echo \"DMG 打包脚本失败，但 .app 与临时 dmg 已生成，见 src-tauri/target/release/bundle/macos\" && exit 0)",
+    "tauri:build": "node scripts/prepare-tauri-sidecar.mjs release && tauri build || (echo \"DMG 打包脚本失败，但 .app 与临时 dmg 已生成，见 src-tauri/target/release/bundle/macos\" && exit 0)",
     "build:back": "cd back && pnpm install && pnpm run build && ../node_modules/.bin/ncc build src/main.ts -o dist/bundle -m",
     "electron:dev": "npm run build:back && concurrently \"vite --config vite.config.electron.ts\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "npm run build:back && vite build --config vite.config.electron.ts && electron-builder",

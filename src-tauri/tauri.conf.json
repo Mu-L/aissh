@@ -19,7 +19,7 @@
   },
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "node ../scripts/prepare-tauri-sidecar.mjs release && pnpm build",
+    "beforeBuildCommand": "pnpm build",
     "devUrl": "http://localhost:3000",
     "frontendDist": "../dist"
   },
@@ -27,14 +27,6 @@
     "active": true,
     "targets": "all",
     "icon": ["icons/icon.png", "icons/icon.icns", "icons/icon.ico"],
-    "externalBin": ["binaries/back-rust"],
-    "windows": {
-      "nsis": {
-        "installerIcon": "icons/icon.ico",
-        "installMode": "perMachine",
-        "oneClick": false,
-        "allowToChangeInstallationDirectory": true
-      }
-    }
+    "externalBin": ["binaries/back-rust"]
   }
 }
