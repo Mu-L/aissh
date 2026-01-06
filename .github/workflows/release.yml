@@ -47,6 +47,9 @@ jobs:
       - name: install frontend dependencies
         run: pnpm install
 
+      - name: build sidecar
+        run: node scripts/prepare-tauri-sidecar.mjs release
+
       - name: build sidecar and app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -58,4 +61,3 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
-        beforeBuildCommand: pnpm install && node scripts/prepare-tauri-sidecar.mjs release && pnpm build
