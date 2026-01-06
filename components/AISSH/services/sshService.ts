@@ -16,18 +16,31 @@ class SSHConnection {
     
     // @ts-ignore
     const isElectron = typeof window !== 'undefined' && window.electron?.isElectron;
+    // Tauri v2 可能会将接口放在 __TAURI_INTERNALS__ 或其他地方，或者根本不注入
+    // 我们检查是否在 tauri:// 协议下运行，或者是否有特定的全局变量
+    const isTauri =
+      typeof window !== 'undefined' &&
+      (window.location.protocol === 'tauri:' ||
+       ((window as any).__TAURI__ != null) || 
+       ((window as any).__TAURI_INTERNALS__ != null));
     
     let socketUrl;
-    if (isElectron) {
+    if (isElectron || isTauri) {
         socketUrl = 'http://localhost:3001';
     } else {
-        socketUrl = process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:3001';
+        socketUrl = import.meta.env.PROD ? '/' : 'http://localhost:3001';
     }
 
-    console.log(`Initializing SSH Connection. Environment: ${isElectron ? 'Electron' : 'Web'}, Socket URL: ${socketUrl}`);
+    console.log(`Initializing SSH Connection. Environment: ${isElectron ? 'Electron' : isTauri ? 'Tauri' : 'Web'}, Socket URL: ${socketUrl}`);
 
     this.socket = io(socketUrl, {
       autoConnect: false,
+    });
+
+    this.socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
+      // 在终端显示连接错误，使用红色
+      this.dataListeners.forEach(cb => cb(`\r\n\x1b[31m[Error] Connection failed to backend: ${err.message}. Please check if the sidecar is running.\x1b[0m\r\n`, 'global'));
     });
 
     this.socket.on('connect', () => {

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Gemini SSH",
+  "version": "1.0.0",
+  "identifier": "com.gemini.ssh.assistant",
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:3001 ws://localhost:3001;"
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "Gemini SSH",
+        "width": 1280,
+        "height": 800,
+        "resizable": true
+      }
+    ]
+  },
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "node ../scripts/prepare-tauri-sidecar.mjs release && pnpm build",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../dist"
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.png", "icons/icon.icns", "icons/icon.ico"],
+    "externalBin": ["binaries/back-rust"],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "perMachine",
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true
+      }
+    }
+  }
+}

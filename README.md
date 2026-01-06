@@ -1,6 +1,8 @@
-# Project 方块智联 ssh 助手 - 集成 AI 的赛博朋克风格 Web SSH 客户端
+# 🌌 Gemini SSH 助手 (Project Gemini)
 
-Project 方块智联ssh 是一款专为运维人员打造的现代化 Web SSH 客户端。它集成了 方块智联 ssh 助手 AI 能力，提供智能命令风险评估、运维辅助聊天以及极具科技感的赛博朋克风格界面，旨在提升服务器管理的效率与安全性。
+**集成 AI 的赛博朋克风格现代化 Web SSH 客户端**
+
+Project Gemini 是一款专为运维人员打造的现代化 Web SSH 客户端。它集成了 Google Gemini AI 能力，提供智能命令风险评估、运维辅助聊天以及极具科技感的“神经连接终端” (Neural Link Terminal) 风格界面，旨在提升服务器管理的效率与安全性。
 
 ## 🌟 核心功能
 
@@ -14,12 +16,12 @@ Project 方块智联ssh 是一款专为运维人员打造的现代化 Web SSH �
 ## 🛠 技术栈
 
 ### 前端 (Frontend)
--   **核心框架**：React 19
+-   **核心框架**：React 19 (并发渲染)
 -   **构建工具**：Vite 6
 -   **状态管理**：Zustand
 -   **UI 体系**：Tailwind CSS + DaisyUI (自定义赛博朋克主题)
 -   **终端模拟**：xterm.js + 插件 (Canvas, Webgl, Fit, WebLinks)
--   **AI SDK**：OpenAI SDK (对接 方块智联 ssh 助手 兼容接口)
+-   **AI SDK**：OpenAI SDK (对接 Gemini 兼容接口)
 
 ### 后端 (Backend)
 -   **核心框架**：NestJS 11
@@ -38,8 +40,9 @@ Project 方块智联ssh 是一款专为运维人员打造的现代化 Web SSH �
 │   ├── components/      # 业务组件 (Terminal, AIChat, ServerTree)
 │   ├── services/        # 核心服务 (AI 工厂, 命令策略, SSH 服务)
 │   └── store/           # Zustand 状态管理
+├── electron/           # Electron 桌面端核心代码 (Main, Preload)
 ├── docker/              # 部署相关配置 (Dockerfile, docker-compose)
-└── package.json         # 前端依赖配置
+└── package.json         # 前端及桌面端配置
 ```
 
 ## 🚀 快速开始
@@ -62,27 +65,36 @@ pnpm install
 ### 3. 配置环境变量
 在项目根目录创建 `.env` 文件，并配置 AI 接口信息：
 ```env
-OPENAI_API_KEY=your_方块智联 ssh 助手_api_key
+OPENAI_API_KEY=your_api_key
 OPENAI_BASE_URL=your_api_base_url
-OPENAI_MODEL=方块智联 ssh 助手-1.5-pro
+OPENAI_MODEL=gemini-1.5-pro
 ```
 
 ### 4. 启动项目
 
-#### 启动前端
+#### Web 端开发
+1. 启动后端：在 `back/` 目录下执行 `pnpm run start:dev`
+2. 启动前端：在根目录下执行 `pnpm run dev`
+
+#### 桌面端开发
 在根目录下执行：
 ```bash
-pnpm run dev
+pnpm run electron:dev
 ```
+*注：该命令会自动编译后端代码并启动 Electron 壳子。*
 
-#### 启动后端
-在 `back/` 目录下执行：
-```bash
-pnpm run start:dev
-```
+### 5. 桌面端打包
+在根目录下执行以下命令进行打包：
+
+- **打包全平台**: `pnpm run electron:build`
+- **打包 Mac 版**: `pnpm run electron:build:mac`
+- **打包 Windows 版**: `pnpm run electron:build:win`
+- **打包 Linux 版**: `pnpm run electron:build:linux`
+
+打包后的文件将生成在 `release/` 目录下。
 
 ## 🎨 UI 设计规范
-本项目采用 **Neural Link Terminal** 风格：
+本项目采用 **Neural Link Terminal** 风格，详细设计规范请参考 [STYLE_GUIDE.md](STYLE_GUIDE.md)：
 -   **主色**：`Neon Cyan` (#00f3ff) - 边框、主要按钮。
 -   **辅色**：`Electric Violet` (#bc13fe) - AI 交互。
 -   **警告**：`Alert Red` (#ff2a00) - 高危操作。
@@ -92,6 +104,7 @@ pnpm run start:dev
 -   遵循 **Clean Code** 原则，变量命名语义化。
 -   单个文件原则上不超过 **700 行**，超过则进行逻辑拆分。
 -   使用**策略模式**处理不同命令的 AI 评估逻辑，**工厂模式**管理 AI 实例。
+-   详细技术架构与 Electron 整合计划请参考 [TECHNICAL_DOC.md](TECHNICAL_DOC.md)。
 
 ## 📄 开源协议
 [MIT License](LICENSE)

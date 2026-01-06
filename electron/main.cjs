@@ -1,7 +1,7 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { fork } = require('child_process');
-const isDev = require('electron-is-dev');
 
 let mainWindow;
 let serverProcess;
@@ -19,18 +19,16 @@ function createWindow() {
     backgroundColor: '#000000',
   });
 
-  if (isDev) {
+  if (!app.isPackaged) {
     // In dev, we wait for Vite to serve
     mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
   } else {
     // In prod, we load the index.html
-    // Note: The path depends on where electron/main.js ends up relative to dist/
-    // Assuming structure:
-    // root/
-    //   dist/ (frontend)
-    //   electron/main.js
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    mainWindow.loadFile(indexPath).catch(err => {
+      console.error('Failed to load index.html:', err);
+    });
   }
 
   mainWindow.on('closed', () => {
@@ -39,33 +37,51 @@ function createWindow() {
 }
 
 function startBackend() {
-  const backendDist = path.join(__dirname, '../back/dist/main.js');
+  let backendDist;
+  
+  if (app.isPackaged) {
+    // In production, backend is bundled in extraResources
+    backendDist = path.join(process.resourcesPath, 'backend/index.js');
+  } else {
+    // In development
+    backendDist = path.join(__dirname, '../back/dist/main.js');
+  }
+  
+  console.log('Backend dist path:', backendDist);
   
   // Check if backend dist exists
-  try {
-    require.resolve(backendDist);
-  } catch (e) {
+  if (!fs.existsSync(backendDist)) {
     console.error('Backend dist not found at:', backendDist);
-    return;
+    // In ASAR, fs.existsSync might work differently, but Electron handles it
   }
 
   console.log('Starting backend process...');
-  serverProcess = fork(backendDist, [], {
-    env: { 
-      ...process.env, 
-      PORT: '3001',
-      NODE_ENV: isDev ? 'development' : 'production'
-    },
-    stdio: 'inherit'
-  });
+  try {
+    const backendRoot = path.dirname(path.dirname(backendDist));
+    serverProcess = fork(backendDist, [], {
+      cwd: backendRoot,
+      env: { 
+        ...process.env, 
+        PORT: '3001',
+        NODE_ENV: app.isPackaged ? 'production' : 'development'
+      },
+      stdio: 'inherit'
+    });
 
-  serverProcess.on('message', (msg) => {
-    console.log('Backend message:', msg);
-  });
-  
-  serverProcess.on('error', (err) => {
-    console.error('Backend failed:', err);
-  });
+    serverProcess.on('message', (msg) => {
+      console.log('Backend message:', msg);
+    });
+    
+    serverProcess.on('error', (err) => {
+      console.error('Backend process error:', err);
+    });
+
+    serverProcess.on('exit', (code, signal) => {
+      console.log(`Backend process exited with code ${code} and signal ${signal}`);
+    });
+  } catch (err) {
+    console.error('Failed to fork backend process:', err);
+  }
 }
 
 app.whenReady().then(() => {

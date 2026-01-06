@@ -1,14 +1,16 @@
 {
-  "name": "gemini-ssh-assistant",
+  "name": "bintelai-ssh-assistant",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:back": "cd back && pnpm install && pnpm run build",
+    "tauri:dev": "node scripts/prepare-tauri-sidecar.mjs debug && tauri dev",
+    "tauri:build": "tauri build || (echo \"DMG 打包脚本失败，但 .app 与临时 dmg 已生成，见 src-tauri/target/release/bundle/macos\" && exit 0)",
+    "build:back": "cd back && pnpm install && pnpm run build && ../node_modules/.bin/ncc build src/main.ts -o dist/bundle -m",
     "electron:dev": "npm run build:back && concurrently \"vite --config vite.config.electron.ts\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "npm run build:back && vite build --config vite.config.electron.ts && electron-builder",
     "electron:build:mac": "npm run electron:build -- --mac --arm64",
@@ -17,6 +19,7 @@
   },
   "dependencies": {
     "electron-is-dev": "^3.0.1",
+    "@tauri-apps/api": "^2.0.0",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "lucide-react": "0.344.0",
@@ -26,6 +29,9 @@
     "react-i18next": "^16.5.1",
     "react-markdown": "9.0.1",
     "react-syntax-highlighter": "^16.1.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "xterm": "^5.3.0",
     "xterm-addon-canvas": "^0.5.0",
@@ -36,7 +42,9 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
     "@types/node": "^22.14.0",
+    "@vercel/ncc": "^0.38.4",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.23",
     "concurrently": "^9.2.1",
@@ -58,14 +66,12 @@
     },
     "files": [
       "dist/**/*",
-      "back/dist/**/*",
-      "back/package.json",
       "electron/**/*"
     ],
     "extraResources": [
       {
-        "from": "back/node_modules",
-        "to": "back/node_modules",
+        "from": "back/dist/bundle",
+        "to": "backend",
         "filter": [
           "**/*"
         ]
