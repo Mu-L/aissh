@@ -57,5 +57,3 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
-        # 显式使用 pnpm
-        beforeBuildCommand: pnpm install && node scripts/prepare-tauri-sidecar.mjs release && pnpm build
