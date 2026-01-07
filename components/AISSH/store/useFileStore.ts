@@ -18,6 +18,9 @@ interface FileState {
   // Actions
   openFile: (serverId: string, filePath: string) => Promise<void>;
   closeFile: (sessionId: string) => void;
+  closeOthers: (sessionId: string) => void;
+  closeLeft: (sessionId: string) => void;
+  closeRight: (sessionId: string) => void;
   updateFileContent: (sessionId: string, content: string) => void;
   saveFile: (sessionId: string) => Promise<boolean>;
   deleteFile: (serverId: string, filePath: string) => Promise<boolean>;
@@ -123,6 +126,66 @@ export const useFileStore = create<FileState>((set, get) => ({
         // Switch to another session if available
         const sessionIds = Object.keys(newSessions);
         newActiveId = sessionIds.length > 0 ? sessionIds[sessionIds.length - 1] : null;
+      }
+      
+      return {
+        fileSessions: newSessions,
+        activeFileSessionId: newActiveId
+      };
+    });
+  },
+  
+  closeOthers: (sessionId: string) => {
+    set(state => {
+      const session = state.fileSessions[sessionId];
+      if (!session) return state;
+      
+      return {
+        fileSessions: { [sessionId]: session },
+        activeFileSessionId: sessionId
+      };
+    });
+  },
+  
+  closeLeft: (sessionId: string) => {
+    set(state => {
+      const sessionIds = Object.keys(state.fileSessions);
+      const index = sessionIds.indexOf(sessionId);
+      if (index === -1) return state;
+      
+      const newSessions: Record<string, FileSession> = {};
+      const idsToKeep = sessionIds.slice(index);
+      idsToKeep.forEach(id => {
+        newSessions[id] = state.fileSessions[id];
+      });
+      
+      let newActiveId = state.activeFileSessionId;
+      if (!newSessions[state.activeFileSessionId || '']) {
+        newActiveId = sessionId;
+      }
+      
+      return {
+        fileSessions: newSessions,
+        activeFileSessionId: newActiveId
+      };
+    });
+  },
+  
+  closeRight: (sessionId: string) => {
+    set(state => {
+      const sessionIds = Object.keys(state.fileSessions);
+      const index = sessionIds.indexOf(sessionId);
+      if (index === -1) return state;
+      
+      const newSessions: Record<string, FileSession> = {};
+      const idsToKeep = sessionIds.slice(0, index + 1);
+      idsToKeep.forEach(id => {
+        newSessions[id] = state.fileSessions[id];
+      });
+      
+      let newActiveId = state.activeFileSessionId;
+      if (!newSessions[state.activeFileSessionId || '']) {
+        newActiveId = sessionId;
       }
       
       return {

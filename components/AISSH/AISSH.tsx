@@ -10,15 +10,29 @@ import { MonacoEditor } from './components/FileEditor/MonacoEditor';
 import { FileBrowser } from './components/FileEditor/FileBrowser';
 import { FileOperations } from './components/FileEditor/FileOperations';
 import { FileTabs } from './components/FileEditor/FileTabs';
-import { Terminal, FileCode } from 'lucide-react';
+import { Terminal, FileCode, MessageSquare, ChevronRight, ChevronLeft } from 'lucide-react';
+import { CyberPanel } from './common/CyberPanel';
 
 const AISSH: React.FC = () => {
   const { 
     servers, folders, activeSessionId, openSessions, logs, failureCounts,
     setActiveSessionId, setOpenSessions, 
     addLog, updateConnectionStatus, addServer, updateServer, deleteServer,
-    addFolder, updateFolder, deleteFolder, resetFailureCount, incrementFailureCount
+    addFolder, updateFolder, deleteFolder, resetFailureCount, incrementFailureCount,
+    isAIPanelOpen, setIsAIPanelOpen
   } = useSSHStore();
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isAIPanelOpen, setIsAIPanelOpen]);
 
   const {
     fileSessions, activeFileSessionId, openFile, closeFile, updateFileContent, saveFile, setActiveFileSessionId, backupFile
@@ -31,9 +45,11 @@ const AISSH: React.FC = () => {
   // const [activeTab, setActiveTab] = useState<'terminal' | 'files'>('terminal');
   const aiChatPanelRef = useRef<AIChatPanelRef>(null);
 
-  const [leftWidth, setLeftWidth] = useState(260);
-  const [rightWidth, setRightWidth] = useState(450);
+  const [leftWidth, setLeftWidth] = useState(280);
+  const [fileBrowserWidth, setFileBrowserWidth] = useState(310);
+  const [rightWidth, setRightWidth] = useState(400);
   const isResizingLeft = useRef(false);
+  const isResizingFileBrowser = useRef(false);
   const isResizingRight = useRef(false);
 
   // Helper to check session type
@@ -74,11 +90,16 @@ const AISSH: React.FC = () => {
 
     const handleMouseMove = (e: MouseEvent) => {
       if (isResizingLeft.current) setLeftWidth(Math.max(150, Math.min(e.clientX, 500)));
+      if (isResizingFileBrowser.current) {
+        // Calculate relative to the main area start (leftWidth + resizer)
+        const mainAreaStart = leftWidth + 1;
+        setFileBrowserWidth(Math.max(310, Math.min(e.clientX - mainAreaStart, 600)));
+      }
       if (isResizingRight.current) setRightWidth(Math.max(300, Math.min(window.innerWidth - e.clientX, 800)));
     };
 
     const handleMouseUp = () => {
-      isResizingLeft.current = isResizingRight.current = false;
+      isResizingLeft.current = isResizingFileBrowser.current = isResizingRight.current = false;
       document.body.style.cursor = 'default';
     };
 
@@ -258,6 +279,12 @@ const AISSH: React.FC = () => {
              // 4. Check connection status and connect if needed
              // Use connectionStatus of the file session ID, not the original server ID
              const status = useSSHStore.getState().connectionStatus[fileSessionId];
+             
+             // Ensure the file browser path is initialized for this session
+             if (!useFileStore.getState().fileBrowserPath[fileSessionId]) {
+                useFileStore.getState().setFileBrowserPath(fileSessionId, '/');
+             }
+
              if (status !== 'connected' && status !== 'connecting' && server) {
                 if (server.password) {
                    resetFailureCount(fileSessionId);
@@ -278,7 +305,23 @@ const AISSH: React.FC = () => {
 
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent relative h-screen">
-        <SessionTabs />
+        <div className="flex items-center justify-between pr-4 bg-sci-obsidian/20 backdrop-blur-sm border-b border-white/5">
+          <SessionTabs />
+          <button 
+            onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+            className={`ml-auto p-2 rounded-lg transition-all duration-300 group relative ${
+              isAIPanelOpen 
+                ? 'text-sci-cyan bg-sci-cyan/10 border-sci-cyan/30' 
+                : 'text-sci-dim hover:text-sci-cyan hover:bg-sci-cyan/5 border-transparent'
+            } border`}
+            title={isAIPanelOpen ? "隐藏 AI 助手" : "显示 AI 助手"}
+          >
+            <MessageSquare size={18} className="group-hover:scale-110 transition-transform" />
+            {!isAIPanelOpen && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-sci-cyan rounded-full animate-pulse shadow-[0_0_8px_rgba(0,243,255,0.8)]"></span>
+            )}
+          </button>
+        </div>
         
         {/* Terminal Area - Always mounted to preserve state, hidden when not needed */}
         <div className={`flex-1 flex flex-col min-w-0 ${(!activeSessionId || isFileSession) ? 'hidden' : 'flex'}`}>
@@ -293,10 +336,20 @@ const AISSH: React.FC = () => {
         {activeSessionId && isFileSession && (
              <div className="flex-1 flex overflow-hidden">
                  {/* File Browser Sidebar */}
-                 <div className="w-64 border-r border-white/5 flex-shrink-0">
+                 <div style={{ width: fileBrowserWidth }} className="flex-shrink-0 flex overflow-hidden border-r border-white/5 bg-[#0d1117]">
                      <FileBrowser serverId={activeSessionId || ''} onFileOpen={handleFileOpen} />
                  </div>
                  
+                 <div 
+                    className="w-px bg-sci-cyan/10 hover:bg-sci-cyan cursor-col-resize transition-colors flex items-center justify-center group z-20 relative -ml-px" 
+                    onMouseDown={(e) => { 
+                        e.preventDefault();
+                        isResizingFileBrowser.current = true; 
+                        document.body.style.cursor = 'col-resize'; 
+                    }}
+                 >
+                    <div className="absolute w-4 h-full cursor-col-resize"></div>
+                 </div>
                  {/* Main Editor Area */}
                  <div className="flex-1 flex flex-col min-w-0">
                      <FileTabs />
@@ -339,19 +392,30 @@ const AISSH: React.FC = () => {
         )}
       </div>
 
-      <div className="w-px bg-sci-cyan/10 hover:bg-sci-cyan cursor-col-resize transition-colors flex items-center justify-center group z-10" onMouseDown={() => { isResizingRight.current = true; document.body.style.cursor = 'col-resize'; }}>
-        <div className="absolute w-4 h-full"></div>
-      </div>
+      {isAIPanelOpen && (
+        <div className="w-px bg-sci-cyan/10 hover:bg-sci-cyan cursor-col-resize transition-colors flex items-center justify-center group z-10" onMouseDown={() => { isResizingRight.current = true; document.body.style.cursor = 'col-resize'; }}>
+          <div className="absolute w-4 h-full"></div>
+        </div>
+      )}
 
       {/* AI Panel Area */}
-      <div style={{ width: rightWidth }} className={`flex-shrink-0 bg-sci-obsidian/40 backdrop-blur-md border-l border-white/5 ${isFileSession ? 'hidden' : ''}`}>
-        <AIChatPanel 
-          ref={aiChatPanelRef} 
-          logs={logs} 
-          activeServerId={activeSessionId} 
-          onInsertCommand={handleInsertCommand} 
-          onSwitchServer={handleSelectServer}
-        />
+      <div 
+        style={{ width: isAIPanelOpen ? (isMobile ? '350px' : rightWidth) : 0 }} 
+        className={`
+          flex-shrink-0 bg-sci-obsidian/40 backdrop-blur-md border-l border-white/5 
+          transition-all duration-300 ease-in-out overflow-hidden relative
+          ${isFileSession ? 'hidden' : ''}
+        `}
+      >
+        <div className="h-full w-full">
+          <AIChatPanel 
+            ref={aiChatPanelRef} 
+            logs={logs} 
+            activeServerId={activeSessionId} 
+            onInsertCommand={handleInsertCommand} 
+            onSwitchServer={handleSelectServer}
+          />
+        </div>
       </div>
 
       {isAddModalOpen && (

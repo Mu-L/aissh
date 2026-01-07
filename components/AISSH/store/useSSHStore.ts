@@ -13,6 +13,7 @@ interface SSHState {
   commandTemplates: CommandTemplate[];
   batchResults: BatchResult[];
   tempSessions: Record<string, { name: string; ip: string; username: string; password?: string; baseId: string }>;
+  isAIPanelOpen: boolean;
   
   // Actions
   setServers: (servers: Server[] | ((prev: Server[] | any) => Server[])) => void;
@@ -25,6 +26,7 @@ interface SSHState {
   incrementFailureCount: (serverId: string) => void;
   addCommandToHistory: (command: string) => void;
   setCommandHistory: (history: string[]) => void;
+  setIsAIPanelOpen: (isOpen: boolean) => void;
   
   // Command Templates Actions
   addCommandTemplate: (template: Omit<CommandTemplate, 'id'>) => void;
@@ -102,6 +104,7 @@ export const useSSHStore = create<SSHState>((set) => ({
   commandTemplates: getInitialTemplates(),
   batchResults: [],
   tempSessions: {},
+  isAIPanelOpen: true,
 
   setServers: (servers) => set((state) => {
     const newServers = typeof servers === 'function' ? servers(state.servers) : servers;
@@ -147,6 +150,8 @@ export const useSSHStore = create<SSHState>((set) => ({
     localStorage.setItem('ssh_history', JSON.stringify(history));
     return { commandHistory: history };
   }),
+
+  setIsAIPanelOpen: (isOpen) => set({ isAIPanelOpen: isOpen }),
 
   addCommandTemplate: (template) => set((state) => {
     const newTemplate = { ...template, id: Date.now().toString() };

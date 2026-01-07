@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useFileStore } from '../../store/useFileStore';
+import { useSSHStore } from '../../store/useSSHStore';
 import { FileNode } from '../../types';
-import { Folder, FileText, ChevronRight, ChevronDown, RefreshCw, Home, ArrowUp, Plus, Download, Trash2, Edit, Copy } from 'lucide-react';
+import { Folder, FileText, ChevronRight, ChevronDown, RefreshCw, Home, ArrowUp, Plus, Download, Trash2, Edit, Copy, Search, X } from 'lucide-react';
 import { Button } from '../../common/Button';
 
 interface FileBrowserProps {
@@ -28,21 +29,38 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ serverId, onFileOpen }
     downloadFile
   } = useFileStore();
 
+  const { connectionStatus } = useSSHStore();
+
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   const currentPath = fileBrowserPath[serverId] || '/';
   const fileList = fileTreeCache[`${serverId}:${currentPath}`] || [];
   const loading = isLoading[serverId];
+  const isConnected = connectionStatus[serverId] === 'connected';
+
+  // Search filter logic
+  const filteredFileList = useMemo(() => {
+    if (!searchQuery.trim()) return fileList;
+    const query = searchQuery.toLowerCase();
+    return fileList.filter(file => file.name.toLowerCase().includes(query));
+  }, [fileList, searchQuery]);
 
   useEffect(() => {
-    // Initial load if empty
-    if (!fileTreeCache[`${serverId}:${currentPath}`]) {
+    // Trigger refresh when:
+    // 1. Connection becomes 'connected'
+    // 2. ServerId changes
+    // 3. Path changes
+    // 4. Cache is missing
+    if (isConnected && !fileTreeCache[`${serverId}:${currentPath}`]) {
       refreshFileTree(serverId, currentPath);
     }
-  }, [serverId, currentPath]);
+  }, [serverId, currentPath, isConnected, fileTreeCache]);
 
   const handleNavigate = (path: string) => {
     setFileBrowserPath(serverId, path);
+    setSearchQuery(''); // Clear search when navigating
   };
 
   const handleGoUp = () => {
@@ -104,8 +122,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ serverId, onFileOpen }
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0d1117] text-sci-text text-sm">
-      {/* Address Bar */}
+    <div className="flex flex-col h-full w-full bg-[#0d1117] text-sci-text text-sm overflow-hidden">
+      {/* Header / Toolbar */}
       <div className="flex items-center p-2 border-b border-white/10 space-x-2">
         <Button 
           size="sm" 
@@ -131,6 +149,16 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ serverId, onFileOpen }
         <Button 
           size="sm" 
           variant="ghost" 
+          onClick={() => setIsSearchVisible(!isSearchVisible)}
+          disabled={loading}
+          className={isSearchVisible ? "text-sci-cyan bg-sci-cyan/10" : ""}
+          title="搜索文件"
+        >
+          <Search size={14} />
+        </Button>
+        <Button 
+          size="sm" 
+          variant="ghost" 
           onClick={handleCreateFile}
           disabled={loading}
           title="新建文件"
@@ -148,6 +176,31 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ serverId, onFileOpen }
         </Button>
       </div>
 
+      {/* Search Input */}
+      {isSearchVisible && (
+        <div className="p-2 border-b border-white/5 bg-sci-obsidian/20">
+          <div className="relative">
+            <input
+              type="text"
+              autoFocus
+              placeholder="搜索当前目录..."
+              className="w-full bg-[#161b22] border border-white/10 rounded px-7 py-1 text-xs focus:border-sci-cyan/50 focus:outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sci-dim" />
+            {searchQuery && (
+              <button 
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-sci-dim hover:text-white"
+                onClick={() => setSearchQuery('')}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* File List */}
       <div className="flex-1 overflow-y-auto relative">
         {loading && fileList.length === 0 ? (
@@ -156,12 +209,12 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ serverId, onFileOpen }
           </div>
         ) : (
           <div className="flex flex-col">
-            {fileList.length === 0 ? (
+            {filteredFileList.length === 0 ? (
               <div className="p-4 text-center text-sci-dim text-xs">
-                空目录
+                {searchQuery ? "未找到匹配文件" : "空目录"}
               </div>
             ) : (
-              fileList.map((file) => (
+              filteredFileList.map((file) => (
                 <div 
                   key={file.id}
                   className="flex items-center px-3 py-1.5 hover:bg-[#161b22] cursor-pointer group transition-colors select-none"

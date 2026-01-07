@@ -23,9 +23,26 @@ export const SessionTabs: React.FC = () => {
       if (menuRef.current && menuRef.current.contains(target)) return;
       setMenu(null);
     };
+    const handleWheel = (e: WheelEvent) => {
+      if (containerRef.current) {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          containerRef.current.scrollLeft += e.deltaY;
+        }
+      }
+    };
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false });
+    }
+
     window.addEventListener('mousedown', handleMouseDown, true);
     window.addEventListener('scroll', () => setMenu(null), true);
     return () => {
+      if (container) {
+        container.removeEventListener('wheel', handleWheel);
+      }
       window.removeEventListener('mousedown', handleMouseDown, true);
       window.removeEventListener('scroll', () => setMenu(null), true);
     };
@@ -39,7 +56,7 @@ export const SessionTabs: React.FC = () => {
   return (
     <div 
       ref={containerRef} 
-      className="flex bg-sci-panel/60 backdrop-blur-md p-1 gap-1 overflow-x-auto no-scrollbar border-b border-white/5 flex-shrink-0 select-none relative"
+      className="flex flex-nowrap bg-sci-panel/60 backdrop-blur-md p-1 gap-1 overflow-x-auto no-scrollbar border-b border-white/5 flex-1 select-none relative"
       style={{ WebkitAppRegion: 'drag' } as any}
     >
       {openSessions.map(id => {

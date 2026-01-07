@@ -473,13 +473,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
              </div>
           )}
       </div>
-
-
-      
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 243, 255, 0.2); border-radius: 0; }
-      `}</style>
     </div>
   );
 });

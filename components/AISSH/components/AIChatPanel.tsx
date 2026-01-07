@@ -644,6 +644,15 @@ export const AIChatPanel = forwardRef<AIChatPanelRef, AIChatPanelProps>(({ logs,
             <button onClick={() => setIsSettingsOpen(true)} className="h-8 px-2 flex items-center justify-center text-sci-text/80 hover:text-sci-cyan transition-all hover:opacity-100" title="神经核心配置">
               <Settings2 size={14}/>
             </button>
+            {window.innerWidth < 1024 && (
+              <button 
+                onClick={() => useSSHStore.getState().setIsAIPanelOpen(false)} 
+                className="h-8 px-2 flex items-center justify-center text-sci-red/80 hover:text-sci-red transition-all hover:bg-sci-red/10 rounded-lg ml-1"
+                title="关闭 AI 面板"
+              >
+                <X size={18}/>
+              </button>
+            )}
           </div>
         </div>
 

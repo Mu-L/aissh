@@ -1,21 +1,48 @@
-import React from 'react';
-import { X, FileText, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, FileText, ArrowLeft, ArrowRight, XCircle, MinusCircle } from 'lucide-react';
 import { useFileStore } from '../../store/useFileStore';
+
+interface TabContextMenuState {
+  x: number;
+  y: number;
+  sessionId: string;
+}
 
 export const FileTabs: React.FC = () => {
   const { 
     fileSessions, 
     activeFileSessionId, 
     setActiveFileSessionId, 
-    closeFile 
+    closeFile,
+    closeOthers,
+    closeLeft,
+    closeRight
   } = useFileStore();
 
+  const [contextMenu, setContextMenu] = useState<TabContextMenuState | null>(null);
+
   const sessions = Object.values(fileSessions);
+
+  // Close context menu on click elsewhere
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
+
+  const handleContextMenu = (e: React.MouseEvent, sessionId: string) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      sessionId
+    });
+  };
 
   if (sessions.length === 0) return null;
 
   return (
-    <div className="flex items-center bg-sci-dark-lighter/50 border-b border-white/5 overflow-x-auto no-scrollbar h-9">
+    <div className="flex items-center bg-sci-dark-lighter/50 border-b border-white/5 overflow-x-auto no-scrollbar h-9 relative">
       {sessions.map((session) => {
         const isActive = activeFileSessionId === session.id;
         const fileName = session.filePath.split('/').pop() || 'Untitled';
@@ -28,6 +55,7 @@ export const FileTabs: React.FC = () => {
               ${isActive ? 'bg-sci-cyan/10 text-sci-cyan' : 'text-white/40 hover:bg-white/5 hover:text-white/60'}
             `}
             onClick={() => setActiveFileSessionId(session.id)}
+            onContextMenu={(e) => handleContextMenu(e, session.id)}
             title={session.filePath}
           >
             {/* Active indicator bar */}
@@ -47,7 +75,7 @@ export const FileTabs: React.FC = () => {
                 ml-2 p-0.5 rounded-sm transition-colors opacity-0 group-hover:opacity-100
                 ${isActive ? 'hover:bg-sci-cyan/20 text-sci-cyan' : 'hover:bg-white/10 text-white/40'}
               `}
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
                 closeFile(session.id);
               }}
@@ -62,6 +90,57 @@ export const FileTabs: React.FC = () => {
           </div>
         );
       })}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div 
+          className="fixed z-[100] bg-[#0a1622] border border-sci-cyan/30 rounded shadow-2xl py-1 min-w-[160px] backdrop-blur-md"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        >
+          <button 
+            className="w-full text-left px-3 py-1.5 text-xs text-white/80 hover:bg-sci-cyan/20 hover:text-sci-cyan flex items-center transition-colors"
+            onClick={() => {
+              closeFile(contextMenu.sessionId);
+              setContextMenu(null);
+            }}
+          >
+            <XCircle size={14} className="mr-2" />
+            关闭
+          </button>
+          <button 
+            className="w-full text-left px-3 py-1.5 text-xs text-white/80 hover:bg-sci-cyan/20 hover:text-sci-cyan flex items-center transition-colors"
+            onClick={() => {
+              closeOthers(contextMenu.sessionId);
+              setContextMenu(null);
+            }}
+          >
+            <MinusCircle size={14} className="mr-2" />
+            关闭其他
+          </button>
+          <div className="h-px bg-white/5 my-1" />
+          <button 
+            className="w-full text-left px-3 py-1.5 text-xs text-white/80 hover:bg-sci-cyan/20 hover:text-sci-cyan flex items-center transition-colors"
+            onClick={() => {
+              closeLeft(contextMenu.sessionId);
+              setContextMenu(null);
+            }}
+          >
+            <ArrowLeft size={14} className="mr-2" />
+            关闭左侧
+          </button>
+          <button 
+            className="w-full text-left px-3 py-1.5 text-xs text-white/80 hover:bg-sci-cyan/20 hover:text-sci-cyan flex items-center transition-colors"
+            onClick={() => {
+              closeRight(contextMenu.sessionId);
+              setContextMenu(null);
+            }}
+          >
+            <ArrowRight size={14} className="mr-2" />
+            关闭右侧
+          </button>
+        </div>
+      )}
     </div>
   );
 };
