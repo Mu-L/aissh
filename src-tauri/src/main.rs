@@ -29,14 +29,6 @@ fn main() {
       
       let mut sidecar = sidecar_result;
 
-      // 在 Windows 上隐藏控制台窗口
-      #[cfg(windows)]
-      {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-        sidecar = sidecar.creation_flags(CREATE_NO_WINDOW);
-      }
-
       match sidecar.spawn() {
         Ok((mut rx, child)) => {
           // 将 child 存入状态中，以便后续关闭
