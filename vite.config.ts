@@ -19,6 +19,27 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        chunkSizeWarningLimit: 1500,
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'vendor-react': ['react', 'react-dom'],
+              'vendor-xterm': [
+                'xterm',
+                'xterm-addon-canvas',
+                'xterm-addon-fit',
+                'xterm-addon-search',
+                'xterm-addon-web-links',
+                'xterm-addon-webgl'
+              ],
+              'vendor-utils': ['socket.io-client', 'zustand', 'i18next', 'react-i18next'],
+              'vendor-ai': ['openai', 'react-markdown', 'react-syntax-highlighter'],
+              'vendor-ui': ['lucide-react']
+            }
+          }
+        }
       }
     };
 });

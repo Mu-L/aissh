@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Server, Folder, ServerTreeProps } from '../types/index';
-import { ChevronRight, ChevronDown, Folder as FolderIcon, Server as ServerIcon, Plus, FolderPlus, Edit3, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder as FolderIcon, Server as ServerIcon, Plus, FolderPlus, Edit3, Trash2, LayoutGrid, Terminal } from 'lucide-react';
+import { ContextMenu, ContextMenuItem } from '../common/ContextMenu';
 
 export const ServerTree: React.FC<ServerTreeProps> = ({ 
   servers, folders, activeServerId, onSelectServer, onAddServer, onEditServer, onDeleteServer, onAddFolder, onEditFolder, onDeleteFolder, onMove, width = 260
@@ -9,6 +10,7 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, items: ContextMenuItem[] } | null>(null);
 
   const toggleFolder = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -23,6 +25,45 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
     }
     setEditingFolderId(null);
   };
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, type: 'folder' | 'server', data: Folder | Server) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const items: ContextMenuItem[] = [];
+
+    if (type === 'folder') {
+      const folder = data as Folder;
+      items.push(
+        { label: '关联新节点', icon: <Plus size={14}/>, onClick: () => onAddServer(folder.id) },
+        { label: '添加子分区', icon: <FolderPlus size={14}/>, onClick: () => onAddFolder(folder.id) },
+        { label: '重命名', icon: <Edit3 size={14}/>, onClick: () => setEditingFolderId(folder.id) },
+        { label: '清除分区', icon: <Trash2 size={14}/>, onClick: () => onDeleteFolder(folder.id), variant: 'danger' }
+      );
+    } else {
+      const server = data as Server;
+      items.push(
+        { label: '打开终端', icon: <Terminal size={14}/>, onClick: () => onSelectServer(server.id) },
+        { label: '编辑节点配置', icon: <Edit3 size={14}/>, onClick: () => onEditServer(server) },
+        { label: '终止连接', icon: <Trash2 size={14}/>, onClick: () => onDeleteServer(server.id), variant: 'danger' }
+      );
+    }
+
+    setContextMenu({ x: e.clientX, y: e.clientY, items });
+  }, [onAddServer, onAddFolder, onDeleteFolder, onSelectServer, onEditServer, onDeleteServer]);
+
+  const handleRootContextMenu = useCallback((e: React.MouseEvent) => {
+    if (e.currentTarget !== e.target) return;
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        { label: '创建根目录', icon: <FolderPlus size={14}/>, onClick: () => onAddFolder(null) },
+        { label: '关联根节点', icon: <Plus size={14}/>, onClick: () => onAddServer(null) },
+      ]
+    });
+  }, [onAddFolder, onAddServer]);
 
   const renderItems = (parentId: string | null) => {
     const currentFolders = folders.filter(f => f.parentId === parentId);
@@ -60,6 +101,7 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
               className={`flex items-center gap-2 p-1 hover:bg-sci-cyan/5 rounded cursor-pointer group transition-all border border-transparent
                 ${dragOverId === folder.id ? 'bg-sci-cyan/10 border-sci-cyan/30 shadow-[0_0_10px_rgba(0,243,255,0.1)]' : ''}`}
               onClick={(e) => toggleFolder(e, folder.id)}
+              onContextMenu={(e) => handleContextMenu(e, 'folder', folder)}
             >
               <div className="w-4 h-4 flex items-center justify-center shrink-0 text-sci-violet/60">
                 {expandedFolders.has(folder.id) ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
@@ -81,21 +123,6 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
               ) : (
                 <span className={`text-[11px] flex-1 truncate select-none font-sci font-medium text-sci-text tracking-wide ${width < 180 ? 'hidden' : ''}`}>{folder.name}</span>
               )}
-
-              <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 bg-sci-panel/90 backdrop-blur rounded px-1 ml-auto shrink-0 shadow-lg border border-sci-cyan/20">
-                <button className="p-1 text-sci-dim hover:text-sci-cyan transition-colors" onClick={(e) => { e.stopPropagation(); onAddServer(folder.id); }} title="在此添加节点">
-                  <Plus size={12}/>
-                </button>
-                <button className="p-1 text-sci-dim hover:text-sci-cyan transition-colors" onClick={(e) => { e.stopPropagation(); onAddFolder(folder.id); }} title="添加子分区">
-                  <FolderPlus size={12}/>
-                </button>
-                <button className="p-1 text-sci-dim hover:text-sci-cyan transition-colors" onClick={(e) => { e.stopPropagation(); setEditingFolderId(folder.id); }} title="重命名">
-                  <Edit3 size={12}/>
-                </button>
-                <button className="p-1 text-sci-dim hover:text-sci-red transition-colors" onClick={(e) => { e.stopPropagation(); onDeleteFolder(folder.id); }} title="清除分区">
-                  <Trash2 size={12}/>
-                </button>
-              </div>
             </div>
             {expandedFolders.has(folder.id) && renderItems(folder.id)}
           </div>
@@ -109,6 +136,7 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
               e.dataTransfer.setData('move_data', JSON.stringify({ type: 'server', id: server.id }));
             }}
             onClick={() => onSelectServer(server.id)}
+            onContextMenu={(e) => handleContextMenu(e, 'server', server)}
             className={`
               flex items-center gap-2 p-1.5 pl-3 rounded cursor-pointer transition-all group border border-transparent
               ${activeServerId === server.id ? 'bg-sci-cyan/10 text-sci-cyan border-l-2 border-l-sci-cyan shadow-[inset_0_0_15px_rgba(0,243,255,0.05)] font-bold' : 'hover:bg-sci-cyan/5 text-sci-text/70 hover:text-sci-text'}
@@ -123,15 +151,6 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
             <div className={`flex-1 min-w-0 ${width < 180 ? 'hidden' : ''}`}>
                <div className="text-[11px] font-sci font-bold truncate leading-tight tracking-wider">{server.name}</div>
                <div className={`text-[9px] font-sci opacity-40 truncate leading-tight tracking-tighter ${width < 220 ? 'hidden' : ''}`}>{server.ip}</div>
-            </div>
-            
-            <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 ml-auto shrink-0 bg-sci-panel/90 backdrop-blur rounded px-1 shadow-lg border border-sci-cyan/20">
-              <button className="p-1 text-sci-dim hover:text-sci-cyan transition-colors" onClick={(e) => { e.stopPropagation(); onEditServer(server); }} title="编辑节点配置">
-                <Edit3 size={12}/>
-              </button>
-              <button className="p-1 text-sci-dim hover:text-sci-red transition-colors" onClick={(e) => { e.stopPropagation(); onDeleteServer(server.id); }} title="终止连接">
-                <Trash2 size={12}/>
-              </button>
             </div>
           </div>
         ))}
@@ -180,6 +199,7 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
       <div 
         className={`flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1 transition-colors
           ${dragOverId === 'root' ? 'bg-sci-cyan/5' : ''}`}
+        onContextMenu={handleRootContextMenu}
         onDragOver={(e) => {
           e.preventDefault();
           if (e.currentTarget === e.target) setDragOverId('root');
@@ -221,6 +241,15 @@ export const ServerTree: React.FC<ServerTreeProps> = ({
            V2.5.4_上行链路
          </div>
       </div>
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={contextMenu.items}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 };
