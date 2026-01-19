@@ -1,7 +1,23 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { fork } = require('child_process');
+const { fork, exec } = require('child_process');
+
+// Single instance lock
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+  process.exit(0);
+}
+
+app.on('second-instance', (event, commandLine, workingDirectory) => {
+  // Someone tried to run a second instance, we should focus our window.
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 
 let mainWindow;
 let splashWindow;
@@ -250,6 +266,23 @@ function createMenu() {
   Menu.setApplicationMenu(menu);
 }
 
+function killBackend() {
+  if (serverProcess) {
+    console.log('[Main] Killing backend process...');
+    if (process.platform === 'win32') {
+      try {
+        // On Windows, use taskkill to ensure the process tree is killed
+        exec(`taskkill /pid ${serverProcess.pid} /T /F`);
+      } catch (e) {
+        serverProcess.kill();
+      }
+    } else {
+      serverProcess.kill();
+    }
+    serverProcess = null;
+  }
+}
+
 app.whenReady().then(() => {
   createSplashWindow(); // Show splash first
   createMenu();
@@ -271,7 +304,5 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  if (serverProcess) {
-    serverProcess.kill();
-  }
+  killBackend();
 });

@@ -1,7 +1,7 @@
 {
   "name": "bintelai-ssh-assistant",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.6",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -129,16 +129,22 @@
     "buildDependenciesFromSource": false,
     "win": {
       "target": [
-        "nsis",
-        "portable"
-      ],
-      "legalTrademarks": "BinterAI"
+        "nsis"
+      ]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "perMachine": true,
-      "differentialPackage": false
+      "allowElevation": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "方块SSH助手",
+      "uninstallDisplayName": "卸载方块SSH助手",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "guid": "bintelai-ssh-assistant-unique-id",
+      "include": "electron/installer.nsh"
     },
     "linux": {
       "target": [

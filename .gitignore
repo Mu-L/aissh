@@ -37,3 +37,4 @@ TECHNICAL_DOC.md
 release/*
 back-rust/target/*
 backupDel/*
+powershell.md
