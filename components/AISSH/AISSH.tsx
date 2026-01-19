@@ -40,7 +40,7 @@ const AISSH: React.FC = () => {
     fileSessions, activeFileSessionId, openFile, closeFile, updateFileContent, saveFile, backupFile
   } = useFileStore();
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState<{ parentId: string | null, editData?: any } | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState<{ parentId: string | null, editData?: any, isClone?: boolean } | null>(null);
   const [passwordPrompt, setPasswordPrompt] = useState<{ serverId: string, serverName: string } | null>(null);
   const [commandToInsert, setCommandToInsert] = useState<string | null>(null);
   const aiChatPanelRef = useRef<AIChatPanelRef>(null);
@@ -255,6 +255,7 @@ const AISSH: React.FC = () => {
           onSelectServer={handleSelectServer} 
           onAddServer={(p) => setIsAddModalOpen({ parentId: p })} 
           onEditServer={(server) => setIsAddModalOpen({ parentId: server.parentId, editData: server })} 
+          onCloneServer={(server) => setIsAddModalOpen({ parentId: server.parentId, editData: server, isClone: true })} 
           onDeleteServer={deleteServer} 
           onAddFolder={(p) => addFolder('新建文件夹', p)} 
           onEditFolder={updateFolder} 
@@ -431,9 +432,10 @@ const AISSH: React.FC = () => {
         <AddServerModal 
           initialData={isAddModalOpen.editData} 
           parentId={isAddModalOpen.parentId} 
+          isClone={isAddModalOpen.isClone}
           onClose={() => setIsAddModalOpen(null)} 
           onSave={(data) => { 
-            if(isAddModalOpen.editData) updateServer(isAddModalOpen.editData.id, data);
+            if(isAddModalOpen.editData && !isAddModalOpen.isClone) updateServer(isAddModalOpen.editData.id, data);
             else addServer(data); 
             setIsAddModalOpen(null); 
           }}

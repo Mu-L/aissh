@@ -74,9 +74,6 @@ function createWindow() {
     autoHideMenuBar: true, // Hide menu bar on Windows/Linux
   });
 
-  mainWindow.setMenu(null); // Double insurance for Windows/Linux
-  mainWindow.removeMenu(); // Remove menu for this window (Windows/Linux)
-
   if (!app.isPackaged) {
     // In dev, we wait for Vite to serve
     mainWindow.loadURL('http://localhost:3000');
@@ -103,9 +100,6 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
-  // Force menu removal again after window is created
-  Menu.setApplicationMenu(Menu.buildFromTemplate([]));
 }
 
 function startBackend() {
@@ -193,10 +187,72 @@ function startBackend() {
   }
 }
 
+function createMenu() {
+  const template = [
+    ...(process.platform === 'darwin' ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about', label: '关于' },
+        { type: 'separator' },
+        { role: 'services', label: '服务' },
+        { type: 'separator' },
+        { role: 'hide', label: '隐藏' },
+        { role: 'hideOthers', label: '隐藏其他' },
+        { role: 'unhide', label: '显示全部' },
+        { type: 'separator' },
+        { role: 'quit', label: '退出' }
+      ]
+    }] : []),
+    {
+      label: '编辑',
+      submenu: [
+        { role: 'undo', label: '撤销' },
+        { role: 'redo', label: '重做' },
+        { type: 'separator' },
+        { role: 'cut', label: '剪切' },
+        { role: 'copy', label: '复制' },
+        { role: 'paste', label: '粘贴' },
+        { role: 'selectAll', label: '全选' }
+      ]
+    },
+    {
+      label: '视图',
+      submenu: [
+        { role: 'reload', label: '重新加载' },
+        { role: 'forceReload', label: '强制重新加载' },
+        { role: 'toggleDevTools', label: '开发者工具' },
+        { type: 'separator' },
+        { role: 'resetZoom', label: '重置缩放' },
+        { role: 'zoomIn', label: '放大' },
+        { role: 'zoomOut', label: '缩小' },
+        { type: 'separator' },
+        { role: 'togglefullscreen', label: '全屏' }
+      ]
+    },
+    {
+      label: '窗口',
+      submenu: [
+        { role: 'minimize', label: '最小化' },
+        { role: 'zoom', label: '缩放' },
+        ...(process.platform === 'darwin' ? [
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        ] : [
+          { role: 'close', label: '关闭' }
+        ])
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
 app.whenReady().then(() => {
   createSplashWindow(); // Show splash first
-  const emptyMenu = Menu.buildFromTemplate([]);
-  Menu.setApplicationMenu(emptyMenu); // Using an empty template to remove all standard menus like File, Edit, etc.
+  createMenu();
   
   startBackend();
   createWindow();

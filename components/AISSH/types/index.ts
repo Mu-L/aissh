@@ -84,6 +84,7 @@ export interface ServerTreeProps {
   onSelectServer: (id: string) => void;
   onAddServer: (parentId: string | null) => void;
   onEditServer: (server: Server) => void;
+  onCloneServer: (server: Server) => void;
   onDeleteServer: (id: string) => void;
   onAddFolder: (parentId: string | null) => void;
   onEditFolder: (id: string, data: Partial<Folder>) => void;

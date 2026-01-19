@@ -10,9 +10,10 @@ interface AddServerModalProps {
   onSave: (data: any) => void;
   parentId: string | null;
   initialData?: Server;
+  isClone?: boolean;
 }
 
-export const AddServerModal: React.FC<AddServerModalProps> = ({ onClose, onSave, parentId, initialData }) => {
+export const AddServerModal: React.FC<AddServerModalProps> = ({ onClose, onSave, parentId, initialData, isClone }) => {
   const [formData, setFormData] = useState({
     name: '', ip: '', username: '', password: '', port: '22'
   });
@@ -43,10 +44,10 @@ export const AddServerModal: React.FC<AddServerModalProps> = ({ onClose, onSave,
             </div>
             <div>
               <h3 className="font-sci font-bold text-lg text-sci-text uppercase tracking-widest">
-                {initialData ? '更新节点' : '初始化节点连接'}
+                {isClone ? '克隆节点' : (initialData ? '更新节点' : '初始化节点连接')}
               </h3>
               <p className="text-[10px] text-sci-cyan/40 uppercase tracking-[0.2em] font-bold font-sci">
-                {initialData ? '修改上行链路配置' : '建立新的网格连接'}
+                {isClone ? '复制现有上行链路配置' : (initialData ? '修改上行链路配置' : '建立新的网格连接')}
               </p>
             </div>
           </div>
@@ -157,7 +158,7 @@ export const AddServerModal: React.FC<AddServerModalProps> = ({ onClose, onSave,
             className="px-8"
           >
             <Save size={14} />
-            {initialData ? '应用同步' : '初始化连接'}
+            {isClone ? '确认克隆' : (initialData ? '应用同步' : '初始化连接')}
           </Button>
         </div>
       </CyberPanel>
