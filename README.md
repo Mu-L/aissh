@@ -1,6 +1,19 @@
 
 [方块智联AI 团队开发](https://www.bintelai.com)
 
+## 智能运维模块
+
+智能运维系统是一个 AI 无缝全面融入的系统，基于各个模块拆分开发，通过微服务整合，实现高可用、可扩展、可维护的运维管理。
+
+[aissh助手](https://github.com/bintelAI/aissh)
+
+[机房视图模块](https://github.com/flyowl/smart-flow)
+
+[AI工作流模块](https://github.com/bintelAI/ai-workflow)
+
+[AI报表模块](https://github.com/bintelAI/ai-report)
+
+
 
 
 # 🌌 方块 SSH 助手SSH 助手
@@ -10,10 +23,7 @@
  方块 SSH 助手是一款专为运维人员打造的现代化 Web SSH 客户端。它集成了 Google 方块 SSH 助手AI 能力，提供智能命令风险评估、运维辅助聊天以及极具科技感的“神经连接终端” (Neural Link Terminal) 风格界面，旨在提升服务器管理的效率与安全性。
 
 
-## 其他模块
-这是智能运维模块之一。
-[aissh助手](https://github.com/bintelAI/aissh)
-[机房视图模块](https://github.com/flyowl/smart-flow)
+
 
 ## 🌟 核心功能
 
